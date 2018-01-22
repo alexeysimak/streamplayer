@@ -1,0 +1,5 @@
+1. Install wxWidgets 
+> sudo apt-get install libwxgtk3.0-dev
+
+2. Install ffmpeg libs 
+> sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev
