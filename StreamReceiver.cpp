@@ -30,8 +30,6 @@ bool StreamReceiver::Init()
 
 bool StreamReceiver::Shutdown()
 {
-/*
     avformat_network_deinit();
-*/
     return true;
 }
