@@ -7,6 +7,7 @@
 
 #include "StreamPlayerApp.h"
 #include "VideoGLCanvas.h"
+#include "StreamReceiver.h"
 
 class StreamPlayerFrame: public wxFrame
 {
@@ -22,8 +23,10 @@ private:
         idButtonPlay,
         idButtonStop,
         idTextBoxURL,
-        idWindowVideo
+        idPanelVideo
     };
+
+    // event handlers
     void OnClose(wxCloseEvent& event);
     void OnQuit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
@@ -36,8 +39,9 @@ private:
     wxBitmapButton* m_buttonPlay;
     wxBitmapButton* m_buttonStop;
     wxTextCtrl* m_textboxURL;
-    wxPanel* m_windowVideo;
+    wxPanel* m_panelVideo;
     VideoGLCanvas* m_videoCanvas;
+    StreamReceiver* m_pStreamReceiver;
 };
 
 

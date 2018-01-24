@@ -137,3 +137,9 @@ void VideoGLCanvas::OnSize( wxSizeEvent& event )
     glOrtho( 0.0, size.GetWidth(), size.GetHeight(), 0.0, 0.0, 100.0 );
     Refresh();
 }
+
+void VideoGLCanvas::OnFrame(Frame* frame)
+{
+
+}
+

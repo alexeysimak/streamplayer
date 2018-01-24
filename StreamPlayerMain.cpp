@@ -64,21 +64,19 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
     m_textboxURL->Create(this, idTextBoxURL, "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov");
     hsizer->Add(m_textboxURL, wxEXPAND);
 
-    m_windowVideo = new wxPanel();
-    m_windowVideo->Create(this, idWindowVideo, wxDefaultPosition, wxSize(200, 200));
-    m_windowVideo->SetBackgroundColour(*wxBLUE);
-    topsizer->Add(m_windowVideo, 1, wxEXPAND|wxALL, 5);
+    m_panelVideo = new wxPanel();
+    m_panelVideo->Create(this, idPanelVideo, wxDefaultPosition, wxSize(200, 200));
+    m_panelVideo->SetBackgroundColour(*wxBLUE);
+    topsizer->Add(m_panelVideo, 1, wxEXPAND|wxALL, 5);
 
     wxBoxSizer* videoSizer = new wxBoxSizer(wxVERTICAL);
-    m_windowVideo->SetSizer(videoSizer);
+    m_panelVideo->SetSizer(videoSizer);
 
-//    wxPanel* panel = new wxPanel();
-//    panel->Create(m_windowVideo, -1, wxDefaultPosition, wxSize(200, 200));
-//    panel->SetBackgroundColour(*wxGREEN);
-//    videoSizer->Add(panel, 1, wxEXPAND);
-
-    m_videoCanvas = new VideoGLCanvas(m_windowVideo);
+    m_videoCanvas = new VideoGLCanvas(m_panelVideo);
     videoSizer->Add(m_videoCanvas, 1, wxEXPAND|wxALL, 5 );
+
+    // crete stream receiver
+    m_pStreamReceiver = new StreamReceiver(m_videoCanvas);
 
     // create a status bar
     CreateStatusBar(2);
@@ -88,6 +86,8 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
 
 StreamPlayerFrame::~StreamPlayerFrame()
 {
+    m_pStreamReceiver->Stop();
+    delete m_pStreamReceiver;
 }
 
 void StreamPlayerFrame::OnClose(wxCloseEvent &event)
@@ -110,6 +110,7 @@ void StreamPlayerFrame::OnPlay(wxCommandEvent &event)
     m_buttonPlay->Disable();
     m_buttonStop->Enable();
     m_textboxURL->Disable();
+    m_pStreamReceiver->Start(m_textboxURL->GetValue());
 }
 
 void StreamPlayerFrame::OnStop(wxCommandEvent &event)
@@ -117,5 +118,6 @@ void StreamPlayerFrame::OnStop(wxCommandEvent &event)
     m_buttonPlay->Enable();
     m_buttonStop->Disable();
     m_textboxURL->Enable();
+    m_pStreamReceiver->Stop();
 }
 
