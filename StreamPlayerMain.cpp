@@ -77,10 +77,6 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
 
     // crete stream receiver
     m_pStreamReceiver = new StreamReceiver(m_videoCanvas);
-
-    // create a status bar
-    CreateStatusBar(2);
-    SetStatusText(_("State: Not implemented"),0);
 }
 
 
