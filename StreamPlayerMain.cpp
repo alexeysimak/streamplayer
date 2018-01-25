@@ -73,7 +73,7 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
     m_panelVideo->SetSizer(videoSizer);
 
     m_videoCanvas = new VideoGLCanvas(m_panelVideo);
-    videoSizer->Add(m_videoCanvas, 1, wxEXPAND|wxALL, 5 );
+    videoSizer->Add(m_videoCanvas, 1, wxEXPAND|wxALL, 1 );
 
     // crete stream receiver
     m_pStreamReceiver = new StreamReceiver(m_videoCanvas);
@@ -119,5 +119,6 @@ void StreamPlayerFrame::OnStop(wxCommandEvent &event)
     m_buttonStop->Disable();
     m_textboxURL->Enable();
     m_pStreamReceiver->Stop();
+    m_videoCanvas->Clear();
 }
 

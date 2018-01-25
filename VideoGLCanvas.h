@@ -16,6 +16,7 @@ public:
     virtual void OnError(const char* error);
     virtual void OnLogMsg(const char* msg);
 
+    void Clear();
 
 private:
     // event handlers
