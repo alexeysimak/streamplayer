@@ -3,6 +3,7 @@
 
 #include "IFrameHandler.h"
 #include <wx/thread.h>
+#include <wx/string.h>
 
 class StreamReceiver
 {
@@ -47,6 +48,7 @@ private:
     IFrameHandler* m_pFrameHandler;
     WorkerThread* m_pWorkerThread;
     bool m_bStopWorkerThread;
+    wxString m_sStreamURL;
 
 };
 

@@ -11,10 +11,13 @@
     #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
 #endif
 
+wxDEFINE_EVENT(wxNewVideoFrameEvent, wxCommandEvent);
+
 
 wxBEGIN_EVENT_TABLE(VideoGLCanvas, wxGLCanvas)
     EVT_PAINT(VideoGLCanvas::OnPaint)
     EVT_SIZE( VideoGLCanvas::OnSize )
+    EVT_COMMAND(wxID_ANY, wxNewVideoFrameEvent, VideoGLCanvas::OnNewVideoFrame)
 wxEND_EVENT_TABLE()
 
 // function to draw the texture for cube faces
@@ -65,9 +68,13 @@ static wxImage DrawDice(int size, unsigned num)
 }
 
 VideoGLCanvas::VideoGLCanvas(wxWindow *parent, int *attribList)
-    : wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
+: wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
+, m_pFrameBuffer(NULL)
+, m_nFrameBufferSize(0)
 {
-    m_context = new wxGLContext(this);
+    memset(&m_CurFrame, 0, sizeof(Frame));
+
+    m_pGLContext = new wxGLContext(this);
 
     int w = GetSize().GetWidth();
     int h = GetSize().GetHeight();
@@ -89,7 +96,11 @@ VideoGLCanvas::VideoGLCanvas(wxWindow *parent, int *attribList)
 
 VideoGLCanvas::~VideoGLCanvas()
 {
-	delete m_context;
+	delete m_pGLContext;
+    if (m_pFrameBuffer) {
+        delete[] m_pFrameBuffer;
+        m_pFrameBuffer = NULL;
+    }
 }
 
 void VideoGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event))
@@ -97,7 +108,7 @@ void VideoGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event))
     // This is required even though dc is not used otherwise.
     wxPaintDC dc(this);
 
-    wxGLCanvas::SetCurrent(*m_context);
+    wxGLCanvas::SetCurrent(*m_pGLContext);
 
     int w = GetSize().GetWidth();
     int h = GetSize().GetHeight();
@@ -105,14 +116,22 @@ void VideoGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event))
     glViewport( 0, 0, w, h ); // use a screen size of WIDTH x HEIGHT
     glEnable(GL_TEXTURE_2D);
 
-    const wxImage img( DrawDice( 512, 5 ) );
+//    const wxImage img( DrawDice( 512, 5 ) );
 
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.GetWidth(), img.GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData());
+
+    m_FrameMutex.Lock();
+
+    if ( m_CurFrame.datasize == 0 ) { // no video frames for now
+        const wxImage img( DrawDice( 512, 5 ) );
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.GetWidth(), img.GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData());
+    } else {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_CurFrame.width, m_CurFrame.height, 0, GL_RGB, GL_UNSIGNED_BYTE, m_CurFrame.data);
+    }
 
     glBegin( GL_QUADS );
         glTexCoord2i( 0, 0 ); glVertex2i( 0, 0 );
@@ -126,6 +145,8 @@ void VideoGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event))
     glFlush();
 
     SwapBuffers();
+
+    m_FrameMutex.Unlock();
 }
 
 void VideoGLCanvas::OnSize( wxSizeEvent& event )
@@ -138,8 +159,47 @@ void VideoGLCanvas::OnSize( wxSizeEvent& event )
     Refresh();
 }
 
+void VideoGLCanvas::OnNewVideoFrame(wxCommandEvent& event)
+{
+    Refresh();
+}
+
 void VideoGLCanvas::OnFrame(Frame* frame)
+{
+    m_FrameMutex.Lock();
+
+    AllocateFrameBuffer(frame->datasize);
+    memcpy(m_pFrameBuffer, frame->data, frame->datasize);
+    m_CurFrame.data = m_pFrameBuffer;
+    m_CurFrame.width = frame->width;
+    m_CurFrame.height = frame->height;
+    m_CurFrame.datasize = frame->datasize;
+
+    m_FrameMutex.Unlock();
+
+    wxCommandEvent event(wxNewVideoFrameEvent);
+    wxPostEvent(this, event);
+}
+
+void VideoGLCanvas::OnError(const char* error)
+{
+    wxMessageBox( error, "StreamPlayer", wxICON_ERROR);
+}
+
+void VideoGLCanvas::OnLogMsg(const char* msg)
 {
 
 }
+
+void VideoGLCanvas::AllocateFrameBuffer(int size)
+{
+    if (size > m_nFrameBufferSize) {
+        if (m_pFrameBuffer) {
+            delete[] m_pFrameBuffer;
+        }
+        m_pFrameBuffer = new unsigned char[size];
+        m_nFrameBufferSize = size;
+    }
+}
+
 

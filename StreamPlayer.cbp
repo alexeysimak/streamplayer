@@ -40,6 +40,7 @@
 			<Add library="avcodec" />
 			<Add library="avformat" />
 		</Linker>
+		<Unit filename="IFrameHandler.h" />
 		<Unit filename="StreamPlayerApp.cpp" />
 		<Unit filename="StreamPlayerApp.h" />
 		<Unit filename="StreamPlayerMain.cpp" />
