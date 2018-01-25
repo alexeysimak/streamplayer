@@ -76,7 +76,7 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
     m_videoCanvas = new VideoGLCanvas(m_panelVideo, this);
     videoSizer->Add(m_videoCanvas, 1, wxEXPAND|wxALL, 1 );
 
-    // crete stream receiver
+    // create stream receiver
     m_pStreamReceiver = new StreamReceiver(m_videoCanvas);
 }
 
