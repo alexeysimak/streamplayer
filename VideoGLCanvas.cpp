@@ -1,5 +1,5 @@
 #include "VideoGLCanvas.h"
-
+#include "StreamPlayerMain.h"
 // For compilers that support precompilation, includes "wx.h".
 #include "wx/wxprec.h"
 
@@ -12,17 +12,19 @@
 #endif
 
 wxDEFINE_EVENT(wxNewVideoFrameEvent, wxCommandEvent);
-
+wxDEFINE_EVENT(wxStreamErrorEvent, wxCommandEvent);
 
 wxBEGIN_EVENT_TABLE(VideoGLCanvas, wxGLCanvas)
     EVT_PAINT(VideoGLCanvas::OnPaint)
     EVT_SIZE( VideoGLCanvas::OnSize )
     EVT_COMMAND(wxID_ANY, wxNewVideoFrameEvent, VideoGLCanvas::OnNewVideoFrame)
+    EVT_COMMAND(wxID_ANY, wxStreamErrorEvent, VideoGLCanvas::OnStreamError)
 wxEND_EVENT_TABLE()
 
 
-VideoGLCanvas::VideoGLCanvas(wxWindow *parent, int *attribList)
+VideoGLCanvas::VideoGLCanvas(wxWindow *parent, wxFrame* pMainFrame, int *attribList)
 : wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
+, m_pMainFrame(pMainFrame)
 , m_pFrameBuffer(NULL)
 , m_nFrameBufferSize(0)
 {
@@ -118,6 +120,11 @@ void VideoGLCanvas::OnNewVideoFrame(wxCommandEvent& event)
     Refresh();
 }
 
+void VideoGLCanvas::OnStreamError(wxCommandEvent& event)
+{
+    ((StreamPlayerFrame*)m_pMainFrame)->OnStreamError(event);
+}
+
 void VideoGLCanvas::OnFrame(Frame* frame)
 {
     m_FrameMutex.Lock();
@@ -131,18 +138,17 @@ void VideoGLCanvas::OnFrame(Frame* frame)
 
     m_FrameMutex.Unlock();
 
+    // notify UI thread that video panel need to be repainted
     wxCommandEvent event(wxNewVideoFrameEvent);
     wxPostEvent(this, event);
 }
 
 void VideoGLCanvas::OnError(const char* error)
 {
-    wxMessageBox( error, "StreamPlayer", wxICON_ERROR);
-}
-
-void VideoGLCanvas::OnLogMsg(const char* msg)
-{
-
+    // send message to the UI thread
+    wxCommandEvent event(wxStreamErrorEvent);
+    event.SetString( error );
+    wxPostEvent(this, event);
 }
 
 void VideoGLCanvas::AllocateFrameBuffer(int size)

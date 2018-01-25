@@ -15,6 +15,8 @@ public:
     StreamPlayerFrame(wxFrame *frame, const wxString& title);
     ~StreamPlayerFrame();
 
+    void OnStreamError(wxCommandEvent& event);
+
 private:
     enum
     {

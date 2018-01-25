@@ -8,14 +8,14 @@ class VideoGLCanvas : public wxGLCanvas
                     , public IFrameHandler
 {
 public:
-    VideoGLCanvas(wxWindow *parent, int *attribList = NULL);
+    VideoGLCanvas(wxWindow* parent, wxFrame* pMainFrame, int *attribList = NULL);
     virtual ~VideoGLCanvas();
 
     // IFrameHandler implementation
     virtual void OnFrame(Frame* frame);
     virtual void OnError(const char* error);
-    virtual void OnLogMsg(const char* msg);
 
+    // must be called from UI thread
     void Clear();
 
 private:
@@ -23,6 +23,7 @@ private:
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnNewVideoFrame(wxCommandEvent& event);
+    void OnStreamError(wxCommandEvent& event);
 
     wxDECLARE_EVENT_TABLE();
 
@@ -30,6 +31,7 @@ private:
     void AllocateFrameBuffer(int size);
 
 private:
+    wxFrame* m_pMainFrame;
     wxGLContext* m_pGLContext;
     unsigned char* m_pFrameBuffer;
     int m_nFrameBufferSize;

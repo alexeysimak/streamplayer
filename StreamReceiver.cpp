@@ -149,6 +149,7 @@ void StreamReceiver::WorkerThreadProc()
                 continue;
             }
             bFirstKeyFound = true;
+
             // try to decode received frame
             int res = avcodec_send_packet(iccx, &pkt);
             if (!res) {

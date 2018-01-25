@@ -15,7 +15,6 @@ class IFrameHandler
 public:
     virtual void OnFrame(Frame* frame) = 0;
     virtual void OnError(const char* error) = 0;
-    virtual void OnLogMsg(const char* msg) = 0;
 };
 
 

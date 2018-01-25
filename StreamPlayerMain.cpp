@@ -64,6 +64,7 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
     m_textboxURL->Create(this, idTextBoxURL, "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov");
     hsizer->Add(m_textboxURL, wxEXPAND);
 
+    // add panel to play video on
     m_panelVideo = new wxPanel();
     m_panelVideo->Create(this, idPanelVideo, wxDefaultPosition, wxSize(200, 200));
     m_panelVideo->SetBackgroundColour(*wxBLUE);
@@ -72,7 +73,7 @@ StreamPlayerFrame::StreamPlayerFrame(wxFrame *frame, const wxString& title)
     wxBoxSizer* videoSizer = new wxBoxSizer(wxVERTICAL);
     m_panelVideo->SetSizer(videoSizer);
 
-    m_videoCanvas = new VideoGLCanvas(m_panelVideo);
+    m_videoCanvas = new VideoGLCanvas(m_panelVideo, this);
     videoSizer->Add(m_videoCanvas, 1, wxEXPAND|wxALL, 1 );
 
     // crete stream receiver
@@ -117,4 +118,11 @@ void StreamPlayerFrame::OnStop(wxCommandEvent &event)
     m_pStreamReceiver->Stop();
     m_videoCanvas->Clear();
 }
+
+void StreamPlayerFrame::OnStreamError(wxCommandEvent& event)
+{
+    OnStop(event);
+    wxMessageBox( event.GetString(), "StreamPlayer", wxICON_ERROR);
+}
+
 
