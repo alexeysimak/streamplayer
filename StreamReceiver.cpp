@@ -99,8 +99,6 @@ void StreamReceiver::WorkerThreadProc()
         return;
     }
 
-    snprintf(ifcx->filename, sizeof(ifcx->filename), "%s", m_sStreamURL.data().AsChar());
-
     //search video stream
     int i_index = -1;
     for (unsigned int ix = 0; ix < ifcx->nb_streams; ix++) {
