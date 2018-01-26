@@ -75,7 +75,6 @@ void StreamReceiver::WorkerThreadProc()
 {
     AVFormatContext *ifcx = NULL;
     AVCodecContext *iccx = NULL;
-    AVCodecParameters *icp = NULL;
     AVCodec *icodec = NULL;
     AVFrame *pFrame = NULL;
     AVFrame *pFrameRGB = NULL;
@@ -105,8 +104,8 @@ void StreamReceiver::WorkerThreadProc()
     //search video stream
     int i_index = -1;
     for (unsigned int ix = 0; ix < ifcx->nb_streams; ix++) {
-        icp = ifcx->streams[ix]->codecpar;
-        if (icp->codec_type == AVMEDIA_TYPE_VIDEO) {
+        iccx = ifcx->streams[ix]->codec;
+        if (iccx->codec_type == AVMEDIA_TYPE_VIDEO) {
             i_index = ix;
             break;
         }
@@ -118,15 +117,13 @@ void StreamReceiver::WorkerThreadProc()
         return;
     }
 
-    icodec = avcodec_find_decoder(icp->codec_id);
+    icodec = avcodec_find_decoder(iccx->codec_id);
     if (icodec == NULL) {
         m_pFrameHandler->OnError("Unsupported codec in stream");
         avformat_close_input(&ifcx);
         return;
     }
 
-    // Get a pointer to the codec context for the video stream
-    iccx = ifcx->streams[i_index]->codec;
     avcodec_open2(iccx, icodec, NULL);
 
     pFrame = av_frame_alloc();
@@ -150,26 +147,25 @@ void StreamReceiver::WorkerThreadProc()
             }
             bFirstKeyFound = true;
 
-            // try to decode received frame
-            int res = avcodec_send_packet(iccx, &pkt);
-            if (!res) {
-                while (!res) {
-                    res = avcodec_receive_frame(iccx, pFrame);
-                    if (!res) {
-                        sws_scale(img_convert_ctx, (const uint8_t* const*)pFrame->data, pFrame->linesize,
-                            0, iccx->height, pFrameRGB->data, pFrameRGB->linesize);
-
-                        Frame frame;
-                        frame.data = pFrameRGB->data[0];
-                        frame.width = iccx->width;
-                        frame.height = iccx->height;
-                        frame.datasize = iccx->width * iccx->height * 24 / 8;
-
-                        m_pFrameHandler->OnFrame(&frame);
-                    }
-                }
+            int got_picture = 0;
+            int ret = avcodec_decode_video2(iccx, pFrame, &got_picture, &pkt);
+            if (ret < 0) {
+                m_pFrameHandler->OnError("Failed to decode video packet");
+                break;
             }
 
+            if (got_picture) {
+                sws_scale(img_convert_ctx, (const uint8_t* const*)pFrame->data, pFrame->linesize,
+                    0, iccx->height, pFrameRGB->data, pFrameRGB->linesize);
+
+                Frame frame;
+                frame.data = pFrameRGB->data[0];
+                frame.width = iccx->width;
+                frame.height = iccx->height;
+                frame.datasize = iccx->width * iccx->height * 24 / 8;
+
+                m_pFrameHandler->OnFrame(&frame);
+            }
         }
 
         av_free_packet(&pkt);
@@ -178,6 +174,7 @@ void StreamReceiver::WorkerThreadProc()
 
     av_read_pause(ifcx);
     avformat_close_input(&ifcx);
+    av_free_packet(&pkt);
     av_frame_free(&pFrame);
     av_frame_free(&pFrameRGB);
 }
